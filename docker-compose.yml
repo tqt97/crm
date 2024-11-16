@@ -1,0 +1,60 @@
+services:
+  laravel-erp:
+    build:
+      context: '.'
+      dockerfile: Dockerfile
+      args:
+        uid: 1000
+    container_name: laravel-erp
+    user: root
+    ports:
+      - 8000:80
+    #environment:
+      #- APACHE_RUN_USER=#1000
+      #- APACHE_RUN_GROUP=#1000
+    volumes:
+      - .:/var/www/html
+      - ./docker/php-fpm/custom-php.ini:/usr/local/etc/php/conf.d/custom-php.ini
+    networks:
+      - backend-network
+
+  mysql-erp:
+    image: mysql:8.0.28
+    container_name: mysql-erp
+    ports:
+      - 3306:3306
+    volumes:
+      - ./mysql:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=laravel_erp
+      - MYSQL_USER=demo
+      - MYSQL_PASSWORD=demo
+    networks:
+      - backend-network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: mysql-phpmyadmin
+    restart: always
+    environment:
+      - PMA_HOST=mysql-erp
+    ports:
+      # Set your desired port forward for phpMyAdmin accordingly
+      - 8001:80
+    depends_on:
+      - mysql-erp
+    networks:
+      - backend-network
+
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+      - 1025:1025 # smtp server
+      - 8025:8025 # web ui
+    networks:
+      - backend-network
+
+networks:
+  backend-network:
+    driver: bridge
